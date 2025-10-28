@@ -2,6 +2,7 @@
 
 import { Moon, Sun } from "lucide-react"
 import { useTheme } from "@/components/theme-provider"
+import { Button } from "@/components/ui/button"
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme()
@@ -18,30 +19,32 @@ export function ThemeToggle() {
   const isDark = theme === "dark"
 
   return (
-    <button
+    <Button
       onClick={toggleTheme}
-      className="relative flex items-center gap-2 h-10 px-1 rounded-full bg-muted border border-border transition-colors hover:bg-muted/80"
+      variant="outline"
+      size="sm"
+      className="cursor-pointer h-10 w-10 p-0 relative overflow-hidden"
       title={isDark ? "Switch to light mode" : "Switch to dark mode"}
     >
       {/* Sun icon */}
-      <div
-        className={`flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300 ${
-          !isDark ? "bg-primary text-primary-foreground shadow-md" : "text-muted-foreground"
+      <Sun
+        className={`h-4 w-4 absolute transition-all duration-500 ${
+          isDark
+            ? "rotate-90 scale-0 opacity-0"
+            : "rotate-0 scale-100 opacity-100"
         }`}
-      >
-        <Sun className="h-4 w-4" />
-      </div>
+      />
 
       {/* Moon icon */}
-      <div
-        className={`flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300 ${
-          isDark ? "bg-primary text-primary-foreground shadow-md" : "text-muted-foreground"
+      <Moon
+        className={`h-4 w-4 absolute transition-all duration-500 ${
+          isDark
+            ? "rotate-0 scale-100 opacity-100"
+            : "-rotate-90 scale-0 opacity-0"
         }`}
-      >
-        <Moon className="h-4 w-4" />
-      </div>
+      />
 
       <span className="sr-only">Toggle theme</span>
-    </button>
+    </Button>
   )
 }

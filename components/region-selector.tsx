@@ -34,9 +34,9 @@ export function RegionSelector({ onSelectRegion }: RegionSelectorProps) {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6">
       <div className="w-full max-w-5xl space-y-8">
-        <div className="text-center space-y-2 animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <h1 className="text-4xl text-foreground font-light">Select your poison </h1>
-          <p className="text-lg text-muted-foreground">Click flag to select your desired region. </p>
+        <div className="mb-0 lg:-mb-8 text-center space-y-2 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <h1 className="text-4xl text-foreground font-semibold">Select a State </h1>
+          <p className="text-muted-foreground">Click on a flag to start</p>
         </div>
 
         <div className="relative w-full rounded-2xl p-8">
@@ -63,7 +63,7 @@ export function RegionSelector({ onSelectRegion }: RegionSelectorProps) {
                       src={region.flag || "/placeholder.svg"}
                       alt={`${region.name} flag`}
                       className={`w-[3vw] h-[2.25vw] min-w-[20px] min-h-[15px] max-w-[48px] max-h-[36px] md:w-[5vw] md:h-[3.75vw] md:min-w-[32px] md:min-h-[24px] object-cover rounded shadow-md transition-all duration-300 ${
-                        hoveredRegion && hoveredRegion !== region.name ? "opacity-50" : "hover:scale-105"
+                        hoveredRegion && hoveredRegion !== region.name ? "opacity-50" : "hover:scale-102"
                       }`}
                     />
                     <div

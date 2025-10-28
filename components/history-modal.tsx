@@ -36,9 +36,14 @@ export function HistoryModal({ submissions, onDelete }: HistoryModalProps) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <button className="p-2 hover:bg-muted rounded-lg transition-colors" title="View submission history">
-          <History className="h-5 w-5 text-foreground" />
-        </button>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="cursor-pointer h-10 w-10 p-0" 
+          title="View submission history"
+        >
+          <History className="h-4 w-4" />
+        </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
@@ -105,7 +110,7 @@ export function HistoryModal({ submissions, onDelete }: HistoryModalProps) {
                 </div>
                 <div className="flex items-center justify-between pt-2 border-t">
                   <span className="text-xs text-muted-foreground">{submission.region}</span>
-                  <span className="text-sm font-medium text-green-600">+RM {submission.earnings.toFixed(2)}</span>
+                  <span className="text-sm font-medium text-green-600">+ {submission.earnings*100} Points</span>
                 </div>
               </div>
             ))

@@ -197,7 +197,7 @@ export function AudioRecorder({ onRecordingComplete, disabled }: AudioRecorderPr
             type="button"
             onClick={startRecording}
             disabled={disabled}
-            className="group relative w-20 h-20 rounded-full bg-black hover:bg-gray-800 transition-all duration-300 flex items-center justify-center shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+            className="cursor-pointer group relative w-20 h-20 rounded-full bg-primary hover:bg-primary/50 transition-all duration-300 flex items-center justify-center shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Mic className="h-8 w-8 text-white hibiscus-text-fill" />
           </button>
@@ -236,7 +236,7 @@ export function AudioRecorder({ onRecordingComplete, disabled }: AudioRecorderPr
               variant="outline"
               size="sm"
               onClick={stopRecording}
-              className="bg-card border-border hover:scale-[1.02] transition-transform duration-200"
+              className="cursor-pointer bg-white dark:bg-card border-border text-foreground hover:bg-gray-300 dark:hover:bg-gray-800 hover:scale-[1.02] transition-all duration-200"
             >
               Stop Recording
             </Button>
@@ -248,19 +248,19 @@ export function AudioRecorder({ onRecordingComplete, disabled }: AudioRecorderPr
             <button
               type="button"
               onClick={togglePlayback}
-              className="w-16 h-16 rounded-full bg-gray-200 hover:bg-gray-300 transition-all duration-300 flex items-center justify-center shadow-md"
+              className="cursor-pointer w-16 h-16 rounded-full bg-gray-800 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 transition-all duration-300 flex items-center justify-center shadow-md"
             >
               {isPlaying ? (
-                <Pause className="h-6 w-6 text-gray-700" />
+                <Pause className="h-6 w-6 text-white" />
               ) : (
-                <Play className="h-6 w-6 text-gray-700 ml-1" />
+                <Play className="h-6 w-6 text-white ml-1" />
               )}
             </button>
 
             <button
               type="button"
               onClick={retryRecording}
-              className="group flex items-center gap-2 text-sm text-gray-600 hover:text-black transition-colors"
+              className="cursor-pointer group flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors"
             >
               <RotateCcw className="h-4 w-4 group-hover:rotate-180 transition-transform duration-500" />
               Retry

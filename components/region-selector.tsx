@@ -3,17 +3,20 @@
 import { useState } from "react"
 
 const malaysianRegions = [
-  { name: "Perlis", x: 13, y: 18, flag: "/images/flags/perlis.png" },
-  { name: "Kedah", x: 15, y: 28, flag: "/images/flags/kedah.png" },
-  { name: "Penang", x: 11, y: 35, flag: "/images/flags/penang.png" },
-  { name: "Perak", x: 16, y: 48, flag: "/images/flags/perak.png" },
-  { name: "Kelantan", x: 23, y: 32, flag: "/images/flags/kelantan.png" },
-  { name: "Terengganu", x: 26, y: 48, flag: "/images/flags/terengganu.png" },
-  { name: "Pahang", x: 24, y: 62, flag: "/images/flags/pahang.png" },
-  { name: "Selangor", x: 14, y: 58, flag: "/images/flags/selangor.png" },
-  { name: "Melaka", x: 12, y: 72, flag: "/images/flags/melaka.png" },
-  { name: "Johor", x: 18, y: 82, flag: "/images/flags/johor.png" },
-  { name: "Sabah", x: 78, y: 32, flag: "/images/flags/sabah.png" },
+  { name: "Perlis", x: 7, y: 14, flag: "/images/flags/perlis.png" },
+  { name: "Kedah", x: 9, y: 26, flag: "/images/flags/kedah.png" },
+  { name: "Penang", x: 2, y: 35, flag: "/images/flags/penang.png" },
+  { name: "Perak", x: 10, y: 38, flag: "/images/flags/perak.png" },
+  { name: "Kelantan", x: 17, y: 32, flag: "/images/flags/kelantan.png" },
+  { name: "Terengganu", x: 24, y: 38, flag: "/images/flags/terengganu.png" },
+  { name: "Pahang", x: 22, y: 56, flag: "/images/flags/pahang.png" },
+  { name: "Selangor", x: 12, y: 50, flag: "/images/flags/selangor.png" },
+  { name: "Kuala Lumpur", x: 9, y: 59, flag: "/images/flags/kuala-lumpur.png" },
+  { name: "Putrajaya", x: 15, y: 59, flag: "/images/flags/putrajaya.png" },
+  { name: "Negeri Sembilan", x: 14, y: 68, flag: "/images/flags/negeri-sembilan.png" },
+  { name: "Melaka", x: 16, y: 78, flag: "/images/flags/melaka.png" },
+  { name: "Johor", x: 25, y: 76, flag: "/images/flags/johor.png" },
+  { name: "Sabah", x: 84, y: 32, flag: "/images/flags/sabah.png" },
   { name: "Sarawak", x: 62, y: 68, flag: "/images/flags/sarawak.png" },
   { name: "Labuan", x: 70, y: 42, flag: "/images/flags/labuan.png" },
 ]
@@ -81,14 +84,6 @@ export function RegionSelector({ onSelectRegion }: RegionSelectorProps) {
                 </div>
               ))}
           </div>
-
-          {selectedRegion && (
-            <div className="mt-6 text-center">
-              <p className="text-lg text-muted-foreground">
-                Selected: <span className="font-semibold text-foreground">{selectedRegion}</span>
-              </p>
-            </div>
-          )}
         </div>
       </div>
     </div>

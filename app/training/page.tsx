@@ -5,17 +5,39 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea"
 import { Response } from "@/components/ui/response"
-import { Check, Loader2, Edit2, Pencil, Wallet } from "lucide-react"
+import { Check, Loader2, Edit2, Pencil, Wallet, AlertCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { AudioRecorder } from "@/components/audio-recorder"
 import { HistoryModal } from "@/components/history-modal"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { AuthButton } from "@/components/auth-button"
 import { StepIndicator } from "@/components/step-indicator"
-import { saveSubmission, getSubmissions, getTotalEarnings, type StoredSubmission } from "@/lib/submission-storage"
+import { usePrivy } from "@privy-io/react-auth"
+import type { TrainingSubmission } from "@/lib/supabase"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+
+// Type for stored submissions (compatible with HistoryModal)
+type StoredSubmission = {
+  id: string
+  timestamp: number
+  originalText: string
+  correctedText: string
+  audioData: string | null
+  region: string
+  earnings: number
+}
 
 export default function TrainingPage() {
   const { toast } = useToast()
   const router = useRouter()
+  const { ready, authenticated, user } = usePrivy()
+  const [userId, setUserId] = useState<string | null>(null)
   const [region, setRegion] = useState<string | null>(null)
   const [showRegionSelector, setShowRegionSelector] = useState(false)
   const [originalText, setOriginalText] = useState("")
@@ -27,27 +49,104 @@ export default function TrainingPage() {
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [submissions, setSubmissions] = useState<StoredSubmission[]>([])
   const [totalEarnings, setTotalEarnings] = useState(0)
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false)
+  const [countdown, setCountdown] = useState(5)
 
+  // Check authentication status
   useEffect(() => {
-    const storedRegion = localStorage.getItem("selectedRegion")
+    if (ready && !authenticated) {
+      setShowLogoutDialog(true)
+    }
+  }, [ready, authenticated])
 
-    if (!storedRegion) {
-      router.push("/")
-      return
+  // Countdown and redirect when logged out
+  useEffect(() => {
+    if (showLogoutDialog) {
+      if (countdown > 0) {
+        const timer = setTimeout(() => {
+          setCountdown(countdown - 1)
+        }, 1000)
+        return () => clearTimeout(timer)
+      } else {
+        router.push("/")
+      }
+    }
+  }, [showLogoutDialog, countdown, router])
+
+  // Initialize user and load data
+  useEffect(() => {
+    const initializeUser = async () => {
+      const storedRegion = localStorage.getItem("selectedRegion")
+
+      if (!storedRegion) {
+        router.push("/")
+        return
+      }
+
+      setRegion(storedRegion)
+
+      // Get or create user if authenticated
+      if (ready && authenticated && user?.email?.address) {
+        try {
+          const response = await fetch('/api/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: user.email.address,
+              privyId: user.id,
+              region: storedRegion,
+            }),
+          })
+
+          if (response.ok) {
+            const userData = await response.json()
+            setUserId(userData.id)
+            await loadSubmissions(userData.id)
+          }
+        } catch (error) {
+          console.error('Error initializing user:', error)
+        }
+      }
+
+      loadNextText()
     }
 
-    setRegion(storedRegion)
-    setSubmissions(getSubmissions())
-    setTotalEarnings(getTotalEarnings())
-    loadNextText()
-  }, [router])
+    initializeUser()
+  }, [router, ready, authenticated, user])
+
+  // Load submissions from Supabase
+  const loadSubmissions = async (userIdToLoad: string) => {
+    try {
+      const response = await fetch(`/api/submissions?userId=${userIdToLoad}`)
+      if (response.ok) {
+        const data = await response.json()
+        
+        // Convert API submissions to StoredSubmission format for HistoryModal
+        const formattedSubmissions: StoredSubmission[] = data.submissions.map((sub: TrainingSubmission) => ({
+          id: sub.id,
+          timestamp: new Date(sub.submitted_at).getTime(),
+          originalText: sub.original_text,
+          correctedText: sub.corrected_text,
+          audioData: sub.audio_url || null,
+          region: sub.region || '',
+          earnings: Number(sub.earnings),
+        }))
+        
+        setSubmissions(formattedSubmissions)
+        setTotalEarnings(Number(data.totalEarnings))
+      }
+    } catch (error) {
+      console.error('Error loading submissions:', error)
+    }
+  }
 
   const handleRegionSelect = (selectedRegion: string) => {
     setRegion(selectedRegion)
     localStorage.setItem("selectedRegion", selectedRegion)
     setShowRegionSelector(false)
-    setSubmissions(getSubmissions())
-    setTotalEarnings(getTotalEarnings())
+    if (userId) {
+      loadSubmissions(userId)
+    }
     loadNextText()
   }
 
@@ -100,6 +199,7 @@ export default function TrainingPage() {
     setIsLoading(true)
 
     try {
+      // Convert audio blob to base64 data URL
       let audioData = ""
       if (audioBlob) {
         const reader = new FileReader()
@@ -109,21 +209,46 @@ export default function TrainingPage() {
         })
       }
 
-      const earnings = 0.1
-      saveSubmission({
-        originalText,
-        correctedText,
-        audioData: audioData || null,
-        region: region || "",
-        earnings,
-      })
+      // Submit to API if user is authenticated, otherwise save to localStorage
+      if (userId) {
+        const response = await fetch('/api/submissions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId,
+            originalText,
+            correctedText,
+            audioData: audioData || null,
+            region: region || "",
+          }),
+        })
 
-      setSubmissions(getSubmissions())
-      setTotalEarnings(getTotalEarnings())
+        if (!response.ok) {
+          throw new Error('Failed to submit')
+        }
+
+        // Reload submissions
+        await loadSubmissions(userId)
+      } else {
+        // Fallback to localStorage if not authenticated
+        const earnings = 0.1
+        const newSubmission: StoredSubmission = {
+          id: Date.now().toString(),
+          timestamp: Date.now(),
+          originalText,
+          correctedText,
+          audioData: audioData || null,
+          region: region || "",
+          earnings,
+        }
+        
+        const updatedSubmissions = [newSubmission, ...submissions].slice(0, 10)
+        setSubmissions(updatedSubmissions)
+        setTotalEarnings(totalEarnings + earnings)
+      }
 
       toast({
         title: "Submission successful!",
-        // description: "You earned RM 0.10",
         description: "You earned 10 Points",
       })
 
@@ -148,14 +273,35 @@ export default function TrainingPage() {
   }
 
   const refreshSubmissions = () => {
-    setSubmissions(getSubmissions())
-    setTotalEarnings(getTotalEarnings())
+    if (userId) {
+      loadSubmissions(userId)
+    }
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6">
-      <div className="max-w-7xl mx-auto mb-8">
-        <div className="flex items-center justify-between">
+    <>
+      {/* Logout Dialog */}
+      <Dialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-2 mb-2">
+              <AlertCircle className="h-6 w-6 text-destructive" />
+              <DialogTitle className="text-xl">Oh No! Error</DialogTitle>
+            </div>
+            <DialogDescription className="text-base space-y-3">
+              <p>Please login to continue training.</p>
+              <p className="font-semibold text-foreground">
+                You will be redirected to the homepage in{" "}
+                <span className="text-destructive text-lg">{countdown}</span> second{countdown !== 1 ? 's' : ''}...
+              </p>
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+
+      <div className="min-h-screen bg-background p-4 md:p-6">
+        <div className="max-w-7xl mx-auto mb-8">
+          <div className="flex items-center justify-between">
           {/* Earnings Badge (non-interactive) - Left Side */}
           <div className="flex items-center gap-2 bg-muted shadow-md rounded-lg px-3 h-10">
             <Wallet className="h-4 w-4 text-muted-foreground" />
@@ -185,6 +331,8 @@ export default function TrainingPage() {
             </Button>
 
             <HistoryModal submissions={submissions} onDelete={refreshSubmissions} />
+
+            <AuthButton />
 
             <ThemeToggle />
           </div>
@@ -369,5 +517,6 @@ export default function TrainingPage() {
         </div>
       </div>
     </div>
+    </>
   )
 }

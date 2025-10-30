@@ -6,9 +6,14 @@ import { RegionSelector } from "@/components/region-selector"
 import { HibiscusTransition } from "@/components/hibiscus-transition"
 import { FlagSwipeTransition } from "@/components/flag-swipe-transition"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { AuthButton } from "@/components/auth-button"
+import { usePrivy } from "@privy-io/react-auth"
+import { useToast } from "@/hooks/use-toast"
 
 export default function HomePage() {
   const router = useRouter()
+  const { ready, authenticated } = usePrivy()
+  const { toast } = useToast()
   const [showTransition, setShowTransition] = useState(false)
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null)
   const [showLandingAnimation, setShowLandingAnimation] = useState<boolean | null>(null)
@@ -24,6 +29,16 @@ export default function HomePage() {
   }
 
   const handleRegionSelect = (region: string) => {
+    // Check if user is authenticated
+    if (!ready || !authenticated) {
+      toast({
+        variant: "destructive",
+        title: "Authentication Required",
+        description: "Please login to proceed",
+      })
+      return
+    }
+
     setSelectedRegion(region)
     localStorage.setItem("selectedRegion", region)
     setShowTransition(true)
@@ -47,7 +62,8 @@ export default function HomePage() {
 
   return (
     <div className="relative">
-      <div className="absolute top-4 right-4 md:top-6 md:right-6 z-10">
+      <div className="absolute top-4 right-4 md:top-6 md:right-6 z-10 flex items-center gap-2">
+        <AuthButton />
         <ThemeToggle />
       </div>
       <RegionSelector onSelectRegion={handleRegionSelect} />

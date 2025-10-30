@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
 import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from "@/components/theme-provider"
+import { Providers } from "@/components/privy-provider"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -35,13 +36,15 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
-        <ThemeProvider defaultTheme="system" storageKey="suara-theme">
-          <Suspense fallback={<div>Loading...</div>}>
-            {children}
-            <Analytics />
-          </Suspense>
-          <Toaster />
-        </ThemeProvider>
+        <Providers>
+          <ThemeProvider defaultTheme="system" storageKey="suara-theme">
+            <Suspense fallback={<div>Loading...</div>}>
+              {children}
+              <Analytics />
+            </Suspense>
+            <Toaster />
+          </ThemeProvider>
+        </Providers>
       </body>
     </html>
   )

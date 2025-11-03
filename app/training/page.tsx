@@ -86,26 +86,48 @@ export default function TrainingPage() {
       setRegion(storedRegion)
 
       // Get or create user if authenticated
-      if (ready && authenticated && user?.email?.address) {
+      if (ready && authenticated && user) {
         try {
+          // Get email from various sources
+          const email = user.email?.address || user.twitter?.username || user.google?.email || user.id
+          const displayName = user.twitter?.username || user.google?.name || email
+          
+          console.log('👤 Creating/fetching user...', {
+            email,
+            displayName,
+            privyId: user.id,
+            region: storedRegion,
+            hasTwitter: !!user.twitter,
+            hasGoogle: !!user.google,
+            hasEmail: !!user.email
+          })
+
           const response = await fetch('/api/users', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              email: user.email.address,
+              email,
               privyId: user.id,
               region: storedRegion,
             }),
           })
 
+          console.log('📡 User API Response Status:', response.status)
+
           if (response.ok) {
             const userData = await response.json()
+            console.log('✅ User data loaded:', userData)
             setUserId(userData.id)
             await loadSubmissions(userData.id)
+          } else {
+            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+            console.error('❌ User API Error:', errorData)
           }
         } catch (error) {
-          console.error('Error initializing user:', error)
+          console.error('❌ Error initializing user:', error)
         }
+      } else {
+        console.log('⏳ Waiting for authentication...', { ready, authenticated, hasUser: !!user })
       }
 
       loadNextText()
@@ -211,6 +233,14 @@ export default function TrainingPage() {
 
       // Submit to API if user is authenticated, otherwise save to localStorage
       if (userId) {
+        console.log('🚀 Submitting to Supabase...', {
+          userId,
+          originalText: originalText.substring(0, 50) + '...',
+          correctedText: correctedText.substring(0, 50) + '...',
+          hasAudio: !!audioData,
+          region,
+        })
+
         const response = await fetch('/api/submissions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -223,9 +253,16 @@ export default function TrainingPage() {
           }),
         })
 
+        console.log('📡 API Response Status:', response.status)
+
         if (!response.ok) {
-          throw new Error('Failed to submit')
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+          console.error('❌ API Error:', errorData)
+          throw new Error(`Failed to submit: ${errorData.error || response.statusText}`)
         }
+
+        const result = await response.json()
+        console.log('✅ Submission successful!', result)
 
         // Reload submissions
         await loadSubmissions(userId)

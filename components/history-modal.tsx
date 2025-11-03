@@ -3,9 +3,9 @@
 import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { History, Play, Trash2 } from "lucide-react"
+import { History, Play, Trash2, Loader2 } from "lucide-react"
 import type { StoredSubmission } from "@/lib/submission-storage"
-import { deleteSubmission } from "@/lib/submission-storage"
+import { useToast } from "@/hooks/use-toast"
 
 interface HistoryModalProps {
   submissions: StoredSubmission[]
@@ -13,7 +13,9 @@ interface HistoryModalProps {
 }
 
 export function HistoryModal({ submissions, onDelete }: HistoryModalProps) {
+  const { toast } = useToast()
   const [playingId, setPlayingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const playAudio = (audioData: string, id: string) => {
     if (!audioData) return
@@ -28,9 +30,41 @@ export function HistoryModal({ submissions, onDelete }: HistoryModalProps) {
     }
   }
 
-  const handleDelete = (id: string) => {
-    deleteSubmission(id)
-    onDelete()
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this submission? This action cannot be undone.")) {
+      return
+    }
+
+    setDeletingId(id)
+
+    try {
+      const response = await fetch(`/api/submissions?submissionId=${id}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to delete submission')
+      }
+
+      // Show success toast
+      toast({
+        title: "Submission deleted",
+        description: "Your submission has been successfully removed.",
+      })
+
+      // Call the onDelete callback to refresh the submissions list
+      onDelete()
+    } catch (error) {
+      console.error('Error deleting submission:', error)
+      toast({
+        variant: "destructive",
+        title: "Delete failed",
+        description: error instanceof Error ? error.message : "Failed to delete submission. Please try again.",
+      })
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   return (
@@ -79,9 +113,14 @@ export function HistoryModal({ submissions, onDelete }: HistoryModalProps) {
                       size="sm"
                       variant="ghost"
                       onClick={() => handleDelete(submission.id)}
-                      className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                      disabled={deletingId === submission.id}
+                      className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      {deletingId === submission.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                 </div>

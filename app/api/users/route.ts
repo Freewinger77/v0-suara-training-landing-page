@@ -5,8 +5,11 @@ import { supabase } from '@/lib/supabase'
 export async function POST(request: Request) {
   try {
     const { email, privyId, region } = await request.json()
+    
+    console.log('👤 [API] Creating/fetching user:', { email, privyId, region })
 
     if (!email) {
+      console.error('❌ [API] Email is required')
       return NextResponse.json({ error: 'Email is required' }, { status: 400 })
     }
 
@@ -30,12 +33,14 @@ export async function POST(request: Request) {
 
     // If user exists, update and return
     if (existingUsers) {
+      console.log('✅ [API] User found:', existingUsers.id)
       // Update privy_id or region if provided
       const updates: any = {}
       if (privyId && !existingUsers.privy_id) updates.privy_id = privyId
       if (region && region !== existingUsers.region) updates.region = region
 
       if (Object.keys(updates).length > 0) {
+        console.log('📝 [API] Updating user:', updates)
         const { data: updatedUser, error: updateError } = await supabase
           .from('users')
           .update(updates)
@@ -44,8 +49,9 @@ export async function POST(request: Request) {
           .single()
 
         if (updateError) {
-          console.error('Error updating user:', updateError)
+          console.error('❌ [API] Error updating user:', updateError)
         } else {
+          console.log('✅ [API] User updated')
           return NextResponse.json(updatedUser)
         }
       }
@@ -54,6 +60,7 @@ export async function POST(request: Request) {
     }
 
     // Create new user
+    console.log('➕ [API] Creating new user...')
     const { data: newUser, error: createError } = await supabase
       .from('users')
       .insert({
@@ -66,10 +73,11 @@ export async function POST(request: Request) {
       .single()
 
     if (createError) {
-      console.error('Error creating user:', createError)
-      return NextResponse.json({ error: 'Failed to create user' }, { status: 500 })
+      console.error('❌ [API] Error creating user:', createError)
+      return NextResponse.json({ error: 'Failed to create user', details: createError }, { status: 500 })
     }
 
+    console.log('✅ [API] User created:', newUser.id)
     return NextResponse.json(newUser)
   } catch (error) {
     console.error('Error in user route:', error)

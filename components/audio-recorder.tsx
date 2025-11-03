@@ -216,19 +216,35 @@ export function AudioRecorder({ onRecordingComplete, disabled }: AudioRecorderPr
               </div>
             )}
 
-            <div className="w-full rounded-lg border border-border bg-card">
-              <LiveWaveform
-                active={isRecording}
-                processing={false}
-                mode="static"
-                height={80}
-                barWidth={3}
-                barGap={2}
-                barColor="gray"
-                sensitivity={0.4}
-                fadeEdges={false}
-                historySize={120}
-              />
+            <div className="w-full rounded-lg border border-border bg-card grid grid-cols-2">
+              <div className="rotate-180 -mr-2">
+                <LiveWaveform
+                  active={isRecording}
+                  processing={false}
+                  mode="static"
+                  height={80}
+                  barWidth={5}
+                  barGap={2}
+                  barColor="teal"
+                  sensitivity={0.80}
+                  fadeEdges={true}
+                  historySize={80}
+                />
+              </div>
+              <div className="-ml-1">
+                <LiveWaveform
+                  active={isRecording}
+                  processing={false}
+                  mode="static"
+                  height={80}
+                  barWidth={5}
+                  barGap={2}
+                  barColor="teal"
+                  sensitivity={0.80}
+                  fadeEdges={true}
+                  historySize={80}
+                />
+              </div>
             </div>
 
             <Button

@@ -11,11 +11,17 @@ interface HibiscusTransitionProps {
 export function HibiscusTransition({ onComplete, duration = 2.5 }: HibiscusTransitionProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const hibiscusRef = useRef<HTMLImageElement>(null)
+  const onCompleteRef = useRef(onComplete)
+
+  // Keep the ref up to date without triggering re-animation
+  useEffect(() => {
+    onCompleteRef.current = onComplete
+  }, [onComplete])
 
   useEffect(() => {
     const tl = gsap.timeline({
       onComplete: () => {
-        onComplete()
+        onCompleteRef.current()
       },
     })
 
@@ -91,7 +97,7 @@ export function HibiscusTransition({ onComplete, duration = 2.5 }: HibiscusTrans
     return () => {
       tl.kill()
     }
-  }, [onComplete, duration])
+  }, [duration])
 
   return (
     <div

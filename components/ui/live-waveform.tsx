@@ -256,7 +256,7 @@ export function LiveWaveform({
         streamRef.current = undefined
         onStreamEnd?.()
       }
-      if (audioContextRef.current) {
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
         audioContextRef.current.close()
         audioContextRef.current = undefined
       }

@@ -53,7 +53,7 @@ export default function HomePage() {
   }
 
   if (showLandingAnimation) {
-    return <HibiscusTransition onComplete={handleLandingAnimationComplete} duration={1.5} />
+    return <HibiscusTransition onComplete={handleLandingAnimationComplete} duration={1} />
   }
 
   if (showTransition && selectedRegion) {
@@ -62,6 +62,9 @@ export default function HomePage() {
 
   return (
     <div className="relative">
+      <div className="absolute top-4 left-4 md:top-6 md:left-6 z-10 flex items-center gap-2">
+        <img src="/images/logo/placeholder-logo-side.png" alt="logo" className="h-10 rounded-lg" />
+      </div>
       <div className="absolute top-4 right-4 md:top-6 md:right-6 z-10 flex items-center gap-2">
         <AuthButton />
         <ThemeToggle />

@@ -23,6 +23,7 @@ export interface User {
 export interface TrainingSubmission {
   id: string
   user_id: string
+  story_id?: number
   original_text: string
   corrected_text: string
   audio_url?: string

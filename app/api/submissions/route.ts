@@ -4,10 +4,11 @@ import { uploadAudioToStorage, dataUrlToBlob } from '@/lib/supabase-storage'
 
 export async function POST(request: Request) {
   try {
-    const { userId, originalText, correctedText, region, audioData } = await request.json()
+    const { userId, storyId, originalText, correctedText, region, audioData } = await request.json()
     
     console.log('🚀 [API] Submission request:', { 
       userId, 
+      storyId,
       hasOriginalText: !!originalText,
       hasCorrectedText: !!correctedText,
       region,
@@ -59,6 +60,7 @@ export async function POST(request: Request) {
       .from('training_submissions')
       .insert({
         user_id: userId,
+        story_id: storyId,
         original_text: originalText,
         corrected_text: correctedText,
         audio_url: audioUrl,

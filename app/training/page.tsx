@@ -43,6 +43,8 @@ export default function TrainingPage() {
   const [originalText, setOriginalText] = useState("")
   const [correctedText, setCorrectedText] = useState("")
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
+  const [currentStoryId, setCurrentStoryId] = useState<number | null>(null)
+  const [currentStoryTitle, setCurrentStoryTitle] = useState<string>("")
   const [isLoading, setIsLoading] = useState(false)
   const [isStreaming, setIsStreaming] = useState(false)
   const [step, setStep] = useState<"original" | "correction" | "audio">("original")
@@ -181,21 +183,56 @@ export default function TrainingPage() {
     setOriginalText("")
     setCorrectedText("")
     setAudioBlob(null)
+    setCurrentStoryId(null)
+    setCurrentStoryTitle("")
     setStep("original")
 
     try {
-      const response = await fetch("/api/training/next")
+      // Pass userId if available to get the next story in sequence
+      const url = userId 
+        ? `/api/training/next?userId=${userId}`
+        : "/api/training/next"
+      
+      const response = await fetch(url)
       const data = await response.json()
 
+      // Check if user has completed all stories
+      if (data.completed) {
+        toast({
+          title: "Congratulations!",
+          description: data.message || "You have completed all available stories!",
+        })
+        setIsStreaming(false)
+        return
+      }
+
+      if (data.error) {
+        throw new Error(data.error)
+      }
+
       const text = data.text
+      if (!text) {
+        throw new Error("No text received")
+      }
+
+      // Capture story metadata
+      setCurrentStoryId(data.storyId)
+      setCurrentStoryTitle(data.title || "")
       setOriginalText(text)
       setCorrectedText(text)
+      
+      console.log('📖 Loaded story:', {
+        storyId: data.storyId,
+        title: data.title,
+        currentStory: data.currentStory,
+        totalStories: data.totalStories
+      })
     } catch (error) {
       setIsStreaming(false)
       toast({
         variant: "destructive",
         title: "Error loading text",
-        description: "Please try again",
+        description: error instanceof Error ? error.message : "Please try again",
       })
     }
   }
@@ -235,6 +272,8 @@ export default function TrainingPage() {
       if (userId) {
         console.log('🚀 Submitting to Supabase...', {
           userId,
+          storyId: currentStoryId,
+          storyTitle: currentStoryTitle,
           originalText: originalText.substring(0, 50) + '...',
           correctedText: correctedText.substring(0, 50) + '...',
           hasAudio: !!audioData,
@@ -246,6 +285,7 @@ export default function TrainingPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userId,
+            storyId: currentStoryId,
             originalText,
             correctedText,
             audioData: audioData || null,

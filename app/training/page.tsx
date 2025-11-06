@@ -188,10 +188,12 @@ export default function TrainingPage() {
     setStep("original")
 
     try {
-      // Pass userId if available to get the next story in sequence
-      const url = userId 
-        ? `/api/training/next?userId=${userId}`
-        : "/api/training/next"
+      // Pass userId and region to get the next story based on region distribution
+      const params = new URLSearchParams()
+      if (userId) params.append('userId', userId)
+      if (region) params.append('region', region)
+      
+      const url = `/api/training/next${params.toString() ? `?${params.toString()}` : ''}`
       
       const response = await fetch(url)
       const data = await response.json()

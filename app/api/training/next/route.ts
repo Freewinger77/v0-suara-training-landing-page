@@ -1,18 +1,26 @@
 import { NextResponse } from "next/server"
-import { getNextStory, getTotalStoryCount, allStories } from "@/lib/training-texts"
+import { getNextStoryForRegion, getTotalStoryCount, allStories } from "@/lib/training-texts"
 import { supabase } from "@/lib/supabase"
+import { getStartingBatch } from "@/lib/state-batch-mapping"
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
+    const region = searchParams.get('region')
 
     if (!userId) {
-      // If no userId, return the first story
-      const firstStory = allStories[0]
+      // If no userId, return the first story based on region
+      const completedStoryIds: number[] = []
+      const firstStory = getNextStoryForRegion(region, completedStoryIds)
+      
       if (!firstStory) {
         return NextResponse.json({ error: "No stories available" }, { status: 404 })
       }
+      
+      const startingBatch = getStartingBatch(region)
+      console.log('👤 New user from region:', region, '→ Starting at Batch', startingBatch)
+      
       return NextResponse.json({
         text: firstStory.content,
         storyId: firstStory.id,
@@ -20,6 +28,18 @@ export async function GET(request: Request) {
         totalStories: getTotalStoryCount(),
         currentStory: 1
       })
+    }
+
+    // Get user's region from database if not provided in query
+    let userRegion = region
+    if (!userRegion) {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('region')
+        .eq('id', userId)
+        .single()
+      
+      userRegion = userData?.region || null
     }
 
     // Get user's completed story IDs from their submissions
@@ -31,12 +51,14 @@ export async function GET(request: Request) {
 
     if (error) {
       console.error('Error fetching submissions:', error)
-      // Continue anyway - return first story
-      const firstStory = allStories[0]
+      // Continue anyway - return first story for this region
+      const firstStory = getNextStoryForRegion(userRegion, [])
+      const startingBatch = getStartingBatch(userRegion)
+      
       return NextResponse.json({
-        text: firstStory.content,
-        storyId: firstStory.id,
-        title: firstStory.title,
+        text: firstStory?.content || allStories[0].content,
+        storyId: firstStory?.id || allStories[0].id,
+        title: firstStory?.title || allStories[0].title,
         totalStories: getTotalStoryCount(),
         currentStory: 1
       })
@@ -44,10 +66,10 @@ export async function GET(request: Request) {
 
     // Get array of completed story IDs
     const completedStoryIds = submissions?.map(s => s.story_id).filter(id => id !== null) || []
-    console.log('📊 User completed stories:', completedStoryIds.length, 'stories')
+    console.log('📊 User from', userRegion, 'has completed', completedStoryIds.length, 'stories')
 
-    // Get the next uncompleted story
-    const nextStory = getNextStory(completedStoryIds)
+    // Get the next uncompleted story based on region
+    const nextStory = getNextStoryForRegion(userRegion, completedStoryIds)
 
     if (!nextStory) {
       // User has completed all stories
@@ -63,8 +85,9 @@ export async function GET(request: Request) {
 
     // Calculate current story number (completed + 1)
     const currentStoryNumber = completedStoryIds.length + 1
+    const startingBatch = getStartingBatch(userRegion)
 
-    console.log('📖 Next story:', {
+    console.log('📖 Next story for region', userRegion, '(starts Batch', startingBatch + '):', {
       storyId: nextStory.id,
       title: nextStory.title,
       currentStory: currentStoryNumber,

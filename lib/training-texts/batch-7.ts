@@ -1,6 +1,6 @@
 export const batch7Stories = [
   {
-    id: 189,
+    id: 187,
     "title": "Story #187 - Urban Mobility Planning",
     "content": "[Content unavailable due to document truncation. Likely discusses planning strategies to improve urban mobility and reduce traffic congestion.]"
   },
